@@ -119,43 +119,21 @@ function signature.update_position()
   local winnr = win:get_win()
 
   win:update_size()
-
-  local direction_priority = config.direction_priority
-
-  -- if the menu window is open, we want to place the signature window on the opposite side
-  local menu_win_config = menu.win:get_win() and vim.api.nvim_win_get_config(menu.win:get_win())
-  if menu.win:is_open() then
-    local cursor_screen_row = vim.fn.winline()
-    local menu_win_is_up = menu_win_config.row - cursor_screen_row < 0
-    direction_priority = menu_win_is_up and { 's' } or { 'n' }
-  end
-
-  local pos = win:get_vertical_direction_and_height(direction_priority, config.max_height)
-
-  -- couldn't find anywhere to place the window
-  if not pos then
-    win:close()
-    return
-  end
-
-  -- set height
-  vim.api.nvim_win_set_height(winnr, pos.height)
   local height = win:get_height()
 
-  -- default to the user's preference but attempt to use the other options
-  if menu_win_config then
-    assert(menu_win_config.relative == 'win', 'The menu window must be relative to a window')
-    local cursor_screen_row = vim.fn.winline()
-    local menu_win_is_up = menu_win_config.row - cursor_screen_row < 0
-    vim.api.nvim_win_set_config(winnr, {
-      relative = menu_win_config.relative,
-      win = menu_win_config.win,
-      row = menu_win_is_up and menu_win_config.row + menu.win:get_height() + 1 or menu_win_config.row - height - 1,
-      col = menu_win_config.col,
-    })
-  else
-    vim.api.nvim_win_set_config(winnr, { relative = 'cursor', row = pos.direction == 's' and 1 or -height, col = 0 })
-  end
+  vim.api.nvim_win_set_height(winnr, height)
+
+  vim.api.nvim_win_set_config(winnr, {
+    relative = 'editor',
+    row = vim.o.lines - height,
+    col = 0,
+    width = vim.o.columns,
+    height = height,
+    anchor = 'NW',
+    focusable = false,
+    zindex = 200,
+  })
 end
+
 
 return signature
